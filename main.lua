@@ -258,20 +258,17 @@ function love.update(dt)
             end
         end
         
-        -- Steering: Right analog stick (axis 4) controls left/right movement
+        -- Steering: Right analog stick controls left/right movement
+        -- Steering only works when accelerating - don't check stick unless accelerating
         local steeringValue = 0
-        if gamepad then
-            -- Right analog stick X-axis (typically axis 4)
+        if gamepad and accelerationValue > 0.1 then
+            -- Only read axis 4 (right stick X) - use higher dead zone to prevent drift
             local rightStickX = gamepad:getAxis(4)
             
-            -- Right stick X-axis typically ranges from -1 (left) to 1 (right)
-            -- Apply dead zone to prevent drift
-            if math.abs(rightStickX) > 0.1 then
-                steeringValue = -rightStickX  -- Inverted: left stick moves car right, right stick moves car left
-                -- Show axis 4 only if no acceleration axis is already active (priority to acceleration)
-                if activeAxis == nil then
-                    activeAxis = 4
-                end
+            -- Higher dead zone threshold (0.2) to prevent accidental steering from neutral position
+            if math.abs(rightStickX) > 0.2 then
+                steeringValue = -rightStickX
+                activeAxis = 4
             end
         end
         
@@ -279,8 +276,9 @@ function love.update(dt)
         -- Move forward = decrease Y position (based on speed)
         carY = carY - (carSpeed * dt)
         
-        -- Move left/right based on steering
-        local steeringSpeed = 200  -- pixels per second for steering
+        -- Move left/right based on steering (only when accelerating)
+        -- steeringValue is only non-zero when accelerating, so this is safe
+        local steeringSpeed = 400  -- pixels per second for steering (increased for more responsive steering)
         carX = carX + (steeringValue * steeringSpeed * dt)
         
         -- Keep car within screen bounds (using base resolution)
@@ -370,7 +368,7 @@ function love.draw()
         -- Display active axis debug number on the right side
         -- Same Y position as timer, equidistant from timer's right edge and screen edge
         if activeAxis then
-            local axisText = tostring(activeAxis)
+            local axisText = "Axis: " .. tostring(activeAxis)
             local axisTextWidth = timerFont:getWidth(axisText)
             local timerRightEdge = timerX + timerWidth
             local screenRightEdge = BASE_WIDTH
