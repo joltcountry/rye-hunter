@@ -10,6 +10,7 @@ REM Change directory to the project root
 cd /d "%~dp0"
 
 REM Launch Love2D with current folder as game
-"%LOVE_PATH%" .
+REM Console output will be visible in this window
+"%LOVE_PATH%" . 2>&1
 
 pause
