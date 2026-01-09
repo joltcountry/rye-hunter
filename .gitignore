@@ -1,0 +1,15 @@
+# Love2D build output
+*.love
+/love2d
+/love2d/*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor junk
+.vscode/
+.idea/
+
+# Windows
+*.exe
