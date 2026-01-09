@@ -20,7 +20,7 @@ local carX = 355
 local carY = 530
 local carStartY = 530  -- Starting Y position
 local carSpeed = 0  -- pixels per second
-local carAccelerationSpeed = 160  -- pixels per second (640 height / 4 seconds = 160)
+local carAccelerationSpeed = 128  -- pixels per second (reduced by 20% from 160)
 
 -- Car gear system
 local carGear = "low"  -- "low" or "high"
@@ -262,13 +262,14 @@ function love.update(dt)
         -- Steering only works when accelerating - don't check stick unless accelerating
         local steeringValue = 0
         if gamepad and accelerationValue > 0.1 then
-            -- Only read axis 4 (right stick X) - use higher dead zone to prevent drift
-            local rightStickX = gamepad:getAxis(4)
+            -- Read axis 3 (right stick X-axis for left/right movement)
+            -- Axis 4 was the Y-axis (up/down), axis 3 should be the X-axis (left/right)
+            local rightStickX = gamepad:getAxis(3)
             
             -- Higher dead zone threshold (0.2) to prevent accidental steering from neutral position
             if math.abs(rightStickX) > 0.2 then
-                steeringValue = -rightStickX
-                activeAxis = 4
+                steeringValue = rightStickX  -- Direct mapping: stick right = steer right, stick left = steer left
+                activeAxis = 3
             end
         end
         
@@ -278,7 +279,7 @@ function love.update(dt)
         
         -- Move left/right based on steering (only when accelerating)
         -- steeringValue is only non-zero when accelerating, so this is safe
-        local steeringSpeed = 400  -- pixels per second for steering (increased for more responsive steering)
+        local steeringSpeed = 320  -- pixels per second for steering (reduced by 20% from 400)
         carX = carX + (steeringValue * steeringSpeed * dt)
         
         -- Keep car within screen bounds (using base resolution)
