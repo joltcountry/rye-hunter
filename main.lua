@@ -20,13 +20,15 @@ local carX = 355
 local carY = 530
 local carStartY = 530  -- Starting Y position
 local carSpeed = 0  -- pixels per second
-local carAccelerationSpeed = 128  -- pixels per second (reduced by 20% from 160)
+local carAccelerationSpeed = 115  -- pixels per second (reduced by 10% from 128)
 
 -- Car gear system
 local carGear = "low"  -- "low" or "high"
 
 -- Machine gun
 local isFiring = false  -- Whether machine gun is currently firing
+local machineGunFiringTimer = 0  -- Timer for switching machine gun position
+local machineGunOnLeft = true  -- Whether machine gun is currently on left side (true) or right side (false)
 
 -- Debug: Track which axis is active for acceleration
 local activeAxis = nil  -- Will be 3, 5, or 6 when active
@@ -209,6 +211,8 @@ function startNewGame()
     
     -- Reset machine gun state
     isFiring = false
+    machineGunFiringTimer = 0
+    machineGunOnLeft = true
     
     -- Start playing the theme music
     themeMusic:play()
@@ -255,7 +259,22 @@ function love.update(dt)
         if gamepad then
             if gamepad:isDown(2) then
                 isFiring = true
+                
+                -- Update firing timer and switch sides every 300ms
+                machineGunFiringTimer = machineGunFiringTimer + dt
+                if machineGunFiringTimer >= 0.05 then  -- 50 milliseconds = 0.05 seconds
+                    machineGunOnLeft = not machineGunOnLeft  -- Flip side
+                    machineGunFiringTimer = 0  -- Reset timer
+                end
+            else
+                -- Button released, reset timer and position
+                machineGunFiringTimer = 0
+                machineGunOnLeft = true  -- Start on left side next time
             end
+        else
+            -- No gamepad, reset
+            machineGunFiringTimer = 0
+            machineGunOnLeft = true
         end
         
         -- Steering: Right analog stick controls left/right movement
@@ -279,7 +298,7 @@ function love.update(dt)
         
         -- Move left/right based on steering (only when accelerating)
         -- steeringValue is only non-zero when accelerating, so this is safe
-        local steeringSpeed = 320  -- pixels per second for steering (reduced by 20% from 400)
+        local steeringSpeed = 288  -- pixels per second for steering (reduced by 10% from 320)
         carX = carX + (steeringValue * steeringSpeed * dt)
         
         -- Keep car within screen bounds (using base resolution)
@@ -391,8 +410,15 @@ function love.draw()
         if isFiring then
             local machineGunWidth = machineGunImage:getWidth()  -- 10px
             local machineGunHeight = machineGunImage:getHeight()  -- 26px
-            -- Position machine gun centered horizontally on car, above the car's top edge
-            local machineGunX = carX + (42 / 2) - (machineGunWidth / 2)  -- Center on car (car width is 42)
+            -- Calculate center position first
+            local centerX = carX + (42 / 2) - (machineGunWidth / 2)  -- Center on car (car width is 42)
+            -- Position machine gun based on which side it should be on
+            local machineGunX
+            if machineGunOnLeft then
+                machineGunX = centerX - 5  -- 5 pixels to the left of center
+            else
+                machineGunX = centerX + 5  -- 5 pixels to the right of center
+            end
             local machineGunY = carY - machineGunHeight  -- Above the car's top edge (26px above)
             love.graphics.draw(machineGunImage, machineGunX, machineGunY)
         end
